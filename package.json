@@ -1,12 +1,10 @@
 {
-  "name": "doccojs",
+  "name": "docco",
   "description": "The Quick and Dirty Literate Programming Documentation Generator",
   "keywords": [
     "documentation",
     "docs",
-    "generator",
-    "literate",
-    "coffeescript"
+    "generator"
   ],
   "author": "Jeremy Ashkenas",
   "version": "0.7.0",

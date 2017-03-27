@@ -2,21 +2,39 @@
 // https://github.com/decaffeinate/decaffeinate
 // `decaffeinate --keep-commonjs --prefer-const docco.coffee`
 const document = function (options, callback) {
-  if (options == null) { options = {} }
+  if (options == null) {
+    options = {}
+  }
   const config = configure(options)
 
   return fs.mkdirs(config.output, function () {
-    if (!callback) { callback = function (error) { if (error) { throw error } } }
+    if (!callback) {
+      callback = function (error) {
+        if (error) {
+          throw error
+        }
+      }
+    }
 
     const copyAsset = function (file, callback) {
-      if (!fs.existsSync(file)) { return callback() }
-      return fs.copy(file, path.join(config.output, path.basename(file)), callback)
+      if (!fs.existsSync(file)) {
+        return callback()
+      }
+      return fs.copy(
+        file,
+        path.join(config.output, path.basename(file)),
+        callback
+      )
     }
 
     const complete = () =>
       copyAsset(config.css, function (error) {
-        if (error) { return callback(error) }
-        if (fs.existsSync(config.public)) { return copyAsset(config.public, callback) }
+        if (error) {
+          return callback(error)
+        }
+        if (fs.existsSync(config.public)) {
+          return copyAsset(config.public, callback)
+        }
         return callback()
       })
 
@@ -25,13 +43,19 @@ const document = function (options, callback) {
     var nextFile = function () {
       const source = files.shift()
       return fs.readFile(source, function (error, buffer) {
-        if (error) { return callback(error) }
+        if (error) {
+          return callback(error)
+        }
 
         const code = buffer.toString()
         const sections = parse(source, code, config)
         format(source, sections, config)
         write(source, sections, config)
-        if (files.length) { return nextFile() } else { return complete() }
+        if (files.length) {
+          return nextFile()
+        } else {
+          return complete()
+        }
       })
     }
 
@@ -41,7 +65,9 @@ const document = function (options, callback) {
 
 var parse = function (source, code, config) {
   let codeText, docsText
-  if (config == null) { config = {} }
+  if (config == null) {
+    config = {}
+  }
   const lines = code.split('\n')
   const sections = []
   const lang = getLanguage(source, config)
@@ -75,9 +101,13 @@ var parse = function (source, code, config) {
 
   for (let line of Array.from(lines)) {
     if (line.match(lang.commentMatcher) && !line.match(lang.commentFilter)) {
-      if (hasCode) { save() }
+      if (hasCode) {
+        save()
+      }
       docsText += (line = line.replace(lang.commentMatcher, '')) + '\n'
-      if (/^(---+|===+)$/.test(line)) { save() }
+      if (/^(---+|===+)$/.test(line)) {
+        save()
+      }
     } else {
       hasCode = true
       codeText += line + '\n'
@@ -92,8 +122,7 @@ var format = function (source, sections, config) {
   let code
   const language = getLanguage(source, config)
 
-  let markedOptions =
-    {smartypants: true}
+  let markedOptions = {smartypants: true}
 
   if (config.marked) {
     markedOptions = config.marked
@@ -103,12 +132,16 @@ var format = function (source, sections, config) {
 
   marked.setOptions({
     highlight (code, lang) {
-      if (!lang) { lang = language.name }
+      if (!lang) {
+        lang = language.name
+      }
 
       if (highlightjs.getLanguage(lang)) {
         return highlightjs.highlight(lang, code).value
       } else {
-        console.warn(`docco: couldn't highlight code block with unknown language '${lang}' in ${source}`)
+        console.warn(
+          `docco: couldn't highlight code block with unknown language '${lang}' in ${source}`
+        )
         return code
       }
     }
@@ -125,11 +158,14 @@ var format = function (source, sections, config) {
 
 var write = function (source, sections, config) {
   let first
-  const destination = file => path.join(config.output, path.basename(file, path.extname(file)) + '.html')
+  const destination = file =>
+    path.join(config.output, path.basename(file, path.extname(file)) + '.html')
 
   const firstSection = _.find(sections, section => section.docsText.length > 0)
-  if (firstSection) { first = marked.lexer(firstSection.docsText)[0] }
-  const hasTitle = first && (first.type === 'heading') && (first.depth === 1)
+  if (firstSection) {
+    first = marked.lexer(firstSection.docsText)[0]
+  }
+  const hasTitle = first && first.type === 'heading' && first.depth === 1
   const title = hasTitle ? first.text : path.basename(source)
 
   const html = config.template({
@@ -157,7 +193,11 @@ const defaults = {
 }
 
 var configure = function (options) {
-  const config = _.extend({}, defaults, _.pick(options, ...Array.from(_.keys(defaults))))
+  const config = _.extend(
+    {},
+    defaults,
+    _.pick(options, ...Array.from(_.keys(defaults)))
+  )
 
   config.languages = buildMatchers(config.languages)
 
@@ -167,8 +207,14 @@ var configure = function (options) {
     }
     config.layout = null
   } else {
-    const dir = (config.layout = path.join(__dirname, 'resources', config.layout))
-    if (fs.existsSync(path.join(dir, 'public'))) { config.public = path.join(dir, 'public') }
+    const dir = (config.layout = path.join(
+      __dirname,
+      'resources',
+      config.layout
+    ))
+    if (fs.existsSync(path.join(dir, 'public'))) {
+      config.public = path.join(dir, 'public')
+    }
     config.template = path.join(dir, 'docco.jst')
     config.css = options.css || path.join(dir, 'docco.css')
   }
@@ -178,11 +224,15 @@ var configure = function (options) {
     config.marked = JSON.parse(fs.readFileSync(options.marked))
   }
 
-  config.sources = options.args.filter(function (source) {
-    const lang = getLanguage(source, config)
-    if (!lang) { console.warn(`docco: skipped unknown type (${path.basename(source)})`) }
-    return lang
-  }).sort()
+  config.sources = options.args
+    .filter(function (source) {
+      const lang = getLanguage(source, config)
+      if (!lang) {
+        console.warn(`docco: skipped unknown type (${path.basename(source)})`)
+      }
+      return lang
+    })
+    .sort()
 
   return config
 }
@@ -194,7 +244,9 @@ var marked = require('marked')
 const commander = require('commander')
 var highlightjs = require('highlight.js')
 
-let languages = JSON.parse(fs.readFileSync(path.join(__dirname, 'resources', 'languages.json')))
+let languages = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'resources', 'languages.json'))
+)
 
 var buildMatchers = function (languages) {
   for (let ext in languages) {
@@ -208,8 +260,9 @@ languages = buildMatchers(languages)
 
 var getLanguage = function (source, config) {
   const ext = config.extension || path.extname(source) || path.basename(source)
-  let lang = (config.languages != null ? config.languages[ext] : undefined) || languages[ext]
-  if (lang && (lang.name === 'markdown')) {
+  let lang = (config.languages != null ? config.languages[ext] : undefined) ||
+    languages[ext]
+  if (lang && lang.name === 'markdown') {
     let codeLang
     const codeExt = path.extname(path.basename(source, ext))
     if (codeExt && (codeLang = languages[codeExt])) {
@@ -219,22 +272,38 @@ var getLanguage = function (source, config) {
   return lang
 }
 
-const { version } = JSON.parse(fs.readFileSync(path.join(__dirname, 'package.json')))
+const {version} = JSON.parse(
+  fs.readFileSync(path.join(__dirname, 'package.json'))
+)
 
 const run = function (args) {
-  if (args == null) { args = process.argv }
+  if (args == null) {
+    args = process.argv
+  }
   const c = defaults
-  commander.version(version)
+  commander
+    .version(version)
     .usage('[options] files')
-    .option('-L, --languages [file]', 'use a custom languages.json', _.compose(JSON.parse, fs.readFileSync))
-    .option('-l, --layout [name]', 'choose a layout (parallel, linear or classic)', c.layout)
+    .option(
+      '-L, --languages [file]',
+      'use a custom languages.json',
+      _.compose(JSON.parse, fs.readFileSync)
+    )
+    .option(
+      '-l, --layout [name]',
+      'choose a layout (parallel, linear or classic)',
+      c.layout
+    )
     .option('-o, --output [path]', 'output to a given folder', c.output)
     .option('-c, --css [file]', 'use a custom css file', c.css)
     .option('-t, --template [file]', 'use a custom .jst template', c.template)
-    .option('-e, --extension [ext]', 'assume a file extension for all inputs', c.extension)
+    .option(
+      '-e, --extension [ext]',
+      'assume a file extension for all inputs',
+      c.extension
+    )
     .option('-m, --marked [file]', 'use custom marked options', c.marked)
-    .parse(args)
-    .name = 'docco'
+    .parse(args).name = 'docco'
   if (commander.args.length) {
     return document(commander)
   } else {

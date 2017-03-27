@@ -139,10 +139,6 @@ var parse = function (source, code, config) {
       line = line.trim()
 
       docsText += line + '\n'
-
-      if (/^(---+|===+)$/.test(line)) {
-        save()
-      }
     } else {
       hasCode = true
       codeText += line + '\n'

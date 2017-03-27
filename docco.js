@@ -71,11 +71,14 @@ var parse = function (source, code, config) {
   const lines = code.split('\n')
   const sections = []
   const lang = getLanguage(source, config)
+
   let hasCode = (docsText = (codeText = ''))
+  let isBlock = false
 
   const save = function () {
     sections.push({docsText, codeText})
     hasCode = (docsText = (codeText = ''))
+    isBlock = false
 
     return hasCode
   }
@@ -99,12 +102,14 @@ var parse = function (source, code, config) {
     }
   }
 
-  for (let line of Array.from(lines)) {
+  const parseSymbol = (line) => {
     if (line.match(lang.commentMatcher) && !line.match(lang.commentFilter)) {
       if (hasCode) {
         save()
       }
+
       docsText += (line = line.replace(lang.commentMatcher, '')) + '\n'
+
       if (/^(---+|===+)$/.test(line)) {
         save()
       }
@@ -113,6 +118,45 @@ var parse = function (source, code, config) {
       codeText += line + '\n'
     }
   }
+
+  const parseBlock = (line) => {
+    if (
+      isBlock ||
+      (
+        line.match(lang.commentBlockStartMatcher) &&
+        !line.match(lang.commentFilter)
+      )
+    ) {
+      if (hasCode) {
+        save()
+      }
+
+      // Does not contain the end symbol of a block? It's a block!
+      isBlock = !line.match(lang.commentBlockEndMatcher)
+
+      line = line.replace(lang.commentBlockStartMatcher, '')
+      line = line.replace(lang.commentBlockEndMatcher, '')
+      line = line.trim()
+
+      docsText += line + '\n'
+
+      if (/^(---+|===+)$/.test(line)) {
+        save()
+      }
+    } else {
+      hasCode = true
+      codeText += line + '\n'
+    }
+  }
+
+  for (let line of lines) {
+    if (lang.block) {
+      parseBlock(line)
+    } else {
+      parseSymbol(line)
+    }
+  }
+
   save()
 
   return sections
@@ -251,7 +295,16 @@ let languages = JSON.parse(
 var buildMatchers = function (languages) {
   for (let ext in languages) {
     const l = languages[ext]
-    l.commentMatcher = new RegExp(`^\\s*${l.symbol}\\s?`)
+
+    if (l.block) {
+      l.commentBlockStartMatcher = new RegExp(`^\\s*${l.block.start}\\s?`)
+      l.commentBlockEndMatcher = new RegExp(`\\s*${l.block.end}\\s*$`)
+    }
+
+    if (l.symbol) {
+      l.commentMatcher = new RegExp(`^\\s*${l.symbol}\\s?`)
+    }
+
     l.commentFilter = /(^#![/]|^\s*#\{)/
   }
   return languages

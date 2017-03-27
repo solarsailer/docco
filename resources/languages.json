@@ -76,6 +76,6 @@
   ".rs":          {"name": "rust", "symbol": "//"},
   ".wsc":         {"name": "vbscript", "symbol": "'"},
   ".wsf":         {"name": "vbscript", "symbol": "'"},
-  ".xml":         {"name": "xml", "symbol": "//"},
+  ".xml":         {"name": "xml", "block": {"start": "<!--", "end": "-->"}},
   ".yaml":        {"name": "yaml", "symbol": "#"}
 }
